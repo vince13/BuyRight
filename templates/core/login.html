@@ -1,0 +1,35 @@
+{% extends "core/base.html" %}
+
+{% load crispy_forms_tags %}
+
+{% block title %}Signup{% endblock title %}
+
+{% block content %}
+
+
+
+    <div class="con mx-auto" style="width:50%;">
+        <h1 class="mt-5">Login</h1>
+        <form action="" method="POST">
+            {% csrf_token %}
+
+            {{ form.as_p }}
+
+            <button class="btn btn-success">Login</button>
+        </form>
+    </div>
+
+
+
+{% endblock content %}
+
+
+
+
+
+
+
+
+
+
+

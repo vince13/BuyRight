@@ -1,0 +1,59 @@
+{% extends "core/base.html" %}
+
+{% load crispy_forms_tags %}
+
+{% block title %}Signup{% endblock title %}
+
+{% block content %}
+
+
+        <div class="mx-auto mt-5" style="width: 60%;">
+            <h1>Signup</h1>
+            <form method="post" action=".">
+            {% csrf_token %}
+
+            <!-- Display non-field errors -->
+            {{ form.non_field_errors }}
+
+            <div class="mb-3">
+                <label class="form-label">Username</label>
+                {{ form.username }}
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Email</label>
+                {{ form.email }}
+            </div>
+
+            <div class="mb-3">
+                <label>Password</label>
+                {{ form.password1 }}
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Repeat Password</label>
+                {{ form.password2 }}
+            </div>
+
+            <button type="submit" class="btn btn-success btn-lg btn-block">Signup</button>
+        </form>
+
+        <br>
+        <p><small>Already have an account? </small><a href="{% url 'core:login' %}">Login</a></p>
+        </div>
+
+    </div>
+
+
+{% endblock content %}
+
+
+
+
+
+
+
+
+
+
+
