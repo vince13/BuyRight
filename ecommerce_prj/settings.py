@@ -46,6 +46,7 @@ INSTALLED_APPS = [
     # Custom Apps
     "core",
     "conversation",
+    "cart",
 
     # Third-party Apps
     "crispy_forms",
@@ -76,6 +77,7 @@ TEMPLATES = [
                 "django.template.context_processors.request",
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
+                "cart.context_processors.cart",
             ],
         },
     },
@@ -94,7 +96,23 @@ DATABASES = {
     }
 }
 
-DATABASES["default"] = dj_database_url.parse(os.getenv("DATABASE_URL"))
+
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.postgresql',
+#         'NAME': os.getenv('DB_NAME'),       # Render's database name
+#         'USER': os.getenv('DB_USER'),       # Render's database user
+#         'PASSWORD': os.getenv('DB_PASSWORD'), # Render's database password
+#         'HOST': os.getenv('DB_HOST'),       # Render's database host
+#         'PORT': os.getenv('DB_PORT', '5432'), # Default PostgreSQL port
+#     }
+# }
+
+
+# DATABASES["default"] = dj_database_url.parse(os.getenv("DATABASE_URL"))
+# DATABASES = {
+#     'default': dj_database_url.config(default=os.getenv('DATABASE_URL'))
+# }
 
 
 # Password validation

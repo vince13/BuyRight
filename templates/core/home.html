@@ -10,12 +10,12 @@
     <div class="row">
         {% for product in products %}
         <div class="col">
-            <div class="card" style="width: 18rem;">
-              <img src="{{ product.image.url }}" class="card-img-top" alt="..." height="250;" border="2px solid green;">
-              <div class="card-body">
+            <div class="card my-card" style="width: 18rem;">
+              <img src="{{ product.image.url }}" class="card-img-top" alt="..." height="250;">
+              <div class="card-body border border-warning">
                 <h5 class="card-title">{{ product.name }}</h5>
                 <p class="card-text">${{ product.price }}</p>
-                <a href="{% url 'core:detail' product.pk %}" class="btn btn-primary">View</a>
+                <a href="{% url 'core:detail' product.pk %}" class="btn btn-primary view-btn">View</a>
 
               </div>
             </div>
