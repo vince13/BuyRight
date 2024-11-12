@@ -1,0 +1,1100 @@
+STEPS:
+
+1. pip install django
+2. django-admin
+startproject {{eg. YOUTUBE}}
+    2a. cd YOUTUBE
+-----------
+
+3. python manage.py runserver
+4. python manage.py migrate
+
+ADMIN
+5. python manage.py createsuperuser
+
+DJANGO APPS & CONNECTION
+6. python manage.py startapp products
+7. Register the App:
+    Inside settings.py > INSTALLED_APPS ['core']
+
+8. Inside the coreApp create urls.py
+
+9. Connect the core/urls.py with the main url
+    1. inside the main urls.py
+        - import the include function
+        - path('', include('core.urls')),
+
+    2. INSIDE THE CORE APP
+        - VIEWS - URL - TEMPLATE
+
+    2a. VIEWS: in coreApp > views.py
+        # Create your views here.
+        def home(request):
+            return render(request, 'core/index.html')
+
+    2b. URLS: add the urls path in core/urls.py
+
+    from django.urls import path
+    app_name = 'core'
+    from . import views
+
+    urlpatterns = [
+        path('', views.home, name='home'),
+    ]
+
+    2c. TEMPLATES
+    - Inside settings.py add the "template"
+        [BASE_DIR / "templates"]
+
+    - Inside the BASE of our application create a directory names templates
+    - Inside the templates directory, create a new directory called core
+    - Inside the core directory, create a file named home.html
+
+
+
+---------------------------------------------
+
+BOOTSTRAP > getbootstarp.com > Docs > Get Started
+- 1. Inside templates, core, create a new html and name it base.html
+- 2. Copy the get started code and paste it in base.html
+
+
+- 3. In bootstrap > components > Navbar, copy the navbar code and paste it under the opening <body> tag in the base.html
+- 4. Under the navbar:
+     <div class="container">
+      {% block content %}
+      {% endblock content %}
+     </div>
+
+- 5. Inside the home.html:
+     {% extends 'core/base.html' %}
+
+     {% block content %}
+	<h1>Home Page</h1>
+     {% endblock content %}
+
+     
+- 6. Inside core, models.py:
+
+from django.db import models
+from django.contrib.auth.models import User
+
+
+# Create your models here.
+class Category(models.Model):
+    name = models.CharField(max_length=200)
+
+    class Meta:
+        verbose_name_plural = "Categories"
+        ordering = ["name"]
+
+    def __str__(self):
+        return self.name
+
+
+class Product(models.Model):
+    category = models.ForeignKey(Category, related_name="products", on_delete=models.CASCADE)
+    name = models.CharField(max_length=100)
+    price = models.DecimalField(decimal_places=2, max_digits=10)
+    description = models.TextField()
+
+    is_sold = models.BooleanField(default=False)
+    stock = models.IntegerField()
+
+    created_by = models.ForeignKey(User, related_name="products", on_delete=models.CASCADE)
+    created_at = models.DateTimeField(auto_now_add=True)
+    modified_at = models.DateTimeField(auto_now=True)
+
+    image = models.ImageField(upload_to="images")
+
+    def __str__(self):
+        return self.name
+
+
+- 6b. pip install pillow
+      python manage.py makemigrations
+      python manage.py migrate
+
+
+
+- 7. In core, inside admin.py:
+     from .models import Product
+
+     admin.site.register(Category)
+     admin.site.register(Product)
+
+
+- 8. Make Migration
+    python manage.py makemigrations
+    python manage.py migrate
+
+--------------------------------------------------------------------------
+
+- 9. WORKING WITH IMAGES - | settings.py & main urls.py
+
+Inside settings.py
+STATIC_URL = "static/" # This already exist
+STATIC_ROOT = BASE_DIR / "staticfiles"
+STATICFILES_DIRS = [BASE_DIR / "static"]
+
+MEDIA_URL = "media/"
+MEDIA_ROOT = BASE_DIR / "media"
+
+
+Inside the main urls.py
+from django.conf import settings
+from django.conf.urls.static import static
+
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+    urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
+
+COMPLETE CODE
+from django.conf import settings
+from django.conf.urls.static import static
+from django.contrib import admin
+from django.urls import path, include
+
+urlpatterns = [
+    path("admin/", admin.site.urls),
+    path("", include("core.urls")),
+]
+
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+    urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
+
+
+- 10. TO DISPLAY THE PRODUCT AT THE FRONT END
+  Views - Templates
+
+- 10a. views.py
+from .models import Product
+
+# Create your views here.
+def home(request):
+    products = Product.objects.all()
+
+    context = {"products": products}
+    return render(request, "core/home.html", context)
+
+
+10b. home.html
+<div class="rows">
+        {% for product in products %}
+        <div class="cols">
+            <div class="card" style="width: 18rem;">
+              <img src="{{ product.image.url }}" class="card-img-top" alt="...">
+              <div class="card-body">
+                <h5 class="card-title">{{ product.name }}</h5>
+                <p class="card-text">${{ product.price }}</p>
+                <a href="#" class="btn btn-primary">View</a>
+              </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+
+
+----------------------------------------------------
+
+WORKING WITH STATIC FILES
+- 1. In the root of the project, create a directory named static
+    - Inside the static folder,
+        - create a directory named css, and inside the css directory, create a file named styles.css
+        - create a directory named js, and inside the js directory, create a file named main.js
+
+- 2. Inside the base.html,
+    - At the top: {% load static %}
+    - under bootstrap cdn: <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+
+
+----------------------------------------------------
+
+WORKING WITH FORMS
+
+FORM > VIEW > URL > TEMPLATE
+
+
+1. SIGNUP FORM
+- 1. In core application create forms.py
+
+from django import forms
+from django.contrib.auth.models import User
+from django.contrib.auth.forms import UserCreationForm
+
+
+class RegisterForm(UserCreationForm):
+    class Meta:
+        model = User
+        fields = ["username", "email", "password1", "password2"]
+
+    username = forms.CharField(widget=forms.TextInput(attrs={
+        "placeholder": "Enter Username",
+        "class": "form-control"
+    }))
+
+    email = forms.CharField(widget=forms.EmailInput(attrs={
+        "placeholder": "Enter Email",
+        "class": "form-control"
+    }))
+
+    password1 = forms.CharField(widget=forms.PasswordInput(attrs={
+        "placeholder": "Enter Password",
+        "class": "form-control"
+    }))
+
+    password2 = forms.CharField(widget=forms.PasswordInput(attrs={
+        "placeholder": "Repeat Password",
+        "class": "form-control"
+    }))
+
+
+
+- 2. in views.py
+from django.shortcuts import render, redirect
+from .forms import RegisterForm
+
+def signup(request):
+
+    if request.method == "POST":
+        form = RegisterForm(request.POST)
+        if form.is_valid():
+            form.save()
+            return redirect("core:home")
+
+    else:
+        form = RegisterForm()
+
+    context = {"form": form}
+    return render(request, "core/signup.html", context)
+
+
+- 3. In core/urls.py
+    path("signup/", views.signup, name="signup"),
+
+
+- 4. In templates/core, create a html file named signup.html
+{% extends "core/base.html" %}
+{% block title %}Signup{% endblock title %}
+{% block content %}
+    <h1>Signup</h1>
+    <form action="" method="POST">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit">Send</button>
+    </form>
+{% endblock content %}
+
+----------------------------------------------------
+Connecting URLS using template tags
+- <a class="nav-link active" href="{% url 'core:signup' %}">Signup</a>
+
+
+
+2. LOGIN FORM
+
+FORM > VIEW > URL > TEMPLATE
+
+from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
+
+
+class UserLoginForm(AuthenticationForm):
+    class Meta:
+        model = User
+        fields = ["username", "password"]
+
+    username = forms.CharField(widget=forms.TextInput(attrs={
+        "placeholder": "Enter Username",
+        "class": "form-control"
+    }))
+
+    password = forms.CharField(widget=forms.PasswordInput(attrs={
+        "placeholder": "Enter Password",
+        "class": "form-control"
+    }))
+
+
+
+- 2. in views.py
+from django.contrib.auth import authenticate, login
+from .forms import RegisterForm, UserLoginForm
+
+def login_view(request):
+
+    if request.method == "POST":
+        form = UserLoginForm(request, data=request.POST)
+        if form.is_valid():
+            username = form.cleaned_data.get("username")
+            password = form.cleaned_data.get("password")
+
+            user = authenticate(username=username, password=password)
+
+            if user is not None:
+                login(request, user)
+                return redirect("core:home")
+
+    else:
+        form = UserLoginForm()
+
+    context = {"form": form}
+    return render(request, "core/login.html", context)
+
+
+- 3. In core/urls.py
+    path("login/", views.login_view, name="signup"),
+
+
+- 4. In templates/core, create a html file named login.html
+{% extends "core/base.html" %}
+{% block title %}Login{% endblock title %}
+{% block content %}
+    <h1>Login</h1>
+    <form action="" method="POST">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit">Login</button>
+    </form>
+{% endblock content %}
+
+----------------------------------------------------
+Connecting URLS using template tags
+- <a class="nav-link active" href="{% url 'core:login' %}">Login</a>
+
+
+3. LOGOUT
+- 1. In core/views.py
+def logout_view(request):
+    logout(request)
+    return redirect("coreApp:login")
+
+- 2. In core/urls.py
+    path("logout/", views.logout_view, name="logout"),
+
+
+----------------------------------------------------
+
+4. PRODUCT FORM
+
+FORM > VIEW > URL > TEMPLATE
+
+- 1. In forms.py
+from django import forms
+from .models import Product
+
+class AddProductForm(forms.ModelForm):
+    class Meta:
+        model = Product
+        fields = ["category", "name", "price", "description", "is_sold", "stock", "image"]
+
+
+
+- 2. in views.py
+from django.contrib.auth.decorators import login_required
+
+@login_required
+def new_item(request):
+    form = AddProductForm()
+
+    if request.method == "POST":
+        form = AddProductForm(request.POST, request.FILES)
+        if form.is_valid():
+            product = form.save(commit=False)
+            product.created_by = request.user
+            product.save()
+            return redirect("core:home")
+
+    context = {"form": form}
+    return render(request, "core/form.html", context)
+
+
+- 3. In core/urls.py
+    path("new-item/", views.new_item, name="new-item"),
+
+
+- 4. In templates/core, create a html file named login.html
+{% extends "core/base.html" %}
+{% block title %}New Product{% endblock title %}
+{% block content %}
+    <h1>Add New Product</h1>
+    <form action="" method="POST">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit">Add Product</button>
+    </form>
+{% endblock content %}
+
+----------------------------------------------------
+Connecting URLS using template tags
+- <a class="nav-link active" href="{% url 'core:new-item' %}">Add Product</a>
+
+
+
+
+BASE.HTML FINAL LOOK
+ {% if request.user.is_authenticated %}
+    <li class="nav-item">
+      <a class="nav-link active">@{{request.user}}</a>
+    </li>
+
+    <li class="nav-item">
+      <a class="nav-link active" href="">Dashboard</a>
+    </li>
+
+    <li class="nav-item">
+      <a class="nav-link active" href="">Profile</a>
+    </li>
+
+    <li class="nav-item">
+        <a class="nav-link active" href="{% url 'core:logout' %}">Logout</a>
+    </li>
+
+{% else %}
+
+    <li class="nav-item">
+      <a class="nav-link active" href="{% url 'core:signup' %}">Signup</a>
+    </li>
+
+    <li class="nav-item">
+      <a class="nav-link active" href="{% url 'core:login' %}">Login</a>
+    </li>
+
+{% endif %}
+
+
+
+----------------------------------------------------
+EDIT ITEM
+
+ - FORM > VIEW > URL > TEMPLATE
+
+- 1. In forms.py: You can use AddProductForm or EditProductForm
+
+class EditProductForm(forms.ModelForm):
+    class Meta:
+        model = Product
+        fields = ["category", "name", "price", "description", "is_sold", "stock", "image"]
+
+
+
+- 2. in views.py
+
+@login_required
+def edit_item(request, pk=pk):
+
+    product = get_object_or_404(Product, pk=pk, created_by=request.user)
+
+    form = AddProductForm(instance=product)
+
+    if request.method == "POST":
+        form = AddProductForm(request.POST, request.FILES, instance=product)
+        if form.is_valid():
+            form.save()
+            return redirect("core:home")
+
+    context = {
+        "form": form,
+        "product": product
+        }
+    return render(request, "core/form.html", context)
+
+
+- 3. In core/urls.py
+    path("edit-item/<int:pk>/", views.edit_item, name="edit-item"),
+
+
+- 4. In templates/core, use the same template - form.html
+
+- 5. <a href="{% url 'core:edit-item' product.pk %}" class="btn btn-success">Edit</a>
+
+
+----------------------------------------------------
+
+ITEM DETAIL PAGE
+
+VIEWS - URL - TEMPLATE
+
+- 1. In core/views.py
+def detail(request, pk):
+
+    product = get_object_or_404(Product, pk=pk)
+
+    related_products = Product.objects.filter(category=product.category).exclude(pk=pk)
+
+    context = {
+        "product": product,
+        "related_products": related_products,
+    }
+    return render(request, "core/detail.html", context)
+
+
+
+- 2. In core/urls.py
+    path("detail/<pk>/", views.detail, name="detail"),
+
+
+- 3. In templates/core, create detail.html
+    {% extends 'core/base.html' %}
+
+    {% block title %}{{ product.name }} Detail{% endblock title %}
+
+    {% block content %}
+
+    <h1>{{ product.name }} - Detail Page</h1>
+
+    <div class="card mb-3" style="max-width: 90%;">
+      <div class="row g-0">
+        <div class="col-md-5">
+          <img src="{{ product.image.url }}" class="img-fluid rounded-start" alt="...">
+        </div>
+        <div class="col-md-7">
+          <div class="card-body">
+            <h5 class="card-title">{{ product.name }}</h5><br>
+            <p class="card-text">${{ product.price }}</p><br>
+            <p class="card-text"><strong>Description:</strong><br>{{ product.description }}</p>
+
+            <br>
+            <hr>
+
+            {% if request.user == product.created_by %}
+              <a href="{% url 'core:edit' product.pk %}" class="btn btn-success">Edit</a>
+
+            {% else %}
+              <a href="" class="btn btn-primary">Contact Seller</a>
+
+            {% endif %}
+
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <br>
+
+    <h1>Related Products</h1>
+
+    <div class="row">
+      {% if related_products %}
+        {% for product in related_products %}
+        <div class="col">
+            <div class="card" style="width: 18rem;">
+              <img src="{{ product.image.url }}" class="card-img-top" alt="..." height="250;" border="2px solid green;">
+              <div class="card-body">
+                <h5 class="card-title">{{ product.name }}</h5>
+                <p class="card-text">${{ product.price }}</p>
+                <a href="{% url 'core:detail' product.pk %}" class="btn btn-primary">View</a>
+
+              </div>
+            </div>
+        </div>
+
+        {% endfor %}
+      {% else %}
+        <p>There is no related products for this category</p>
+      {% endif %}
+    </div>
+
+
+DELETE VIEW
+VIEW - URL - TEMPLATE
+
+- 1. In core/views.py
+    def delete_view(request, pk):
+        product = get_object_or_404(Product, pk=pk, created_by=request.user)
+
+        if request.method == "POST":
+            product.delete()
+            return redirect("core:home")
+
+        context = {
+            "product": product,
+        }
+        return render(request, "core/delete.html", context)
+
+
+- 2. In core/urls.py
+    path("delete/<int:pk>/", views.delete_view, name="delete"),
+
+
+
+- 3. In templates/core, crate delete.html
+
+    {% extends "core/base.html" %}
+
+    {% block title %}Delete{% endblock title %}
+
+    {% block content %}
+    <h1>Delete</h1>
+        <form action="" method="POST">
+            {% csrf_token %}
+
+            <p class="my-5">Are you sure that you want to delete <strong>"{{ product.name }}"</strong>?</p>
+
+            <a href="{% url 'core:detail' product.pk %}" class="btn btn-success">Back</a>
+            <button type="submit" class="btn btn-danger">Yes, Delete</button>
+        </form>
+
+    {% endblock content %}
+
+
+
+
+---------------------------CONVERSATION APP SETUP--------------------------------
+1. python manage.py startapp conversation
+
+2. In settings.py register the app in INSTALLED_APP["conversation"]
+
+3. Connect the conversation url to the main url
+   path("conversation/", include("conversation.urls"))
+
+4. Update the views:
+   def home(request):
+	
+	context = {}
+	return render(request,"conversation/home.html", context) 
+
+
+
+5. In conversation urls.py
+
+   from django.urls import path
+   from . import views
+   
+   app_name = "conversation"
+   
+   urlpatterns = [
+	path("", views.home, name="home")
+   ]   
+
+
+
+6. In templates, create a directory named conversation. In the conversation directory, create a file named home.html
+
+   - Inside the home.html, 
+
+   {% extends "conversation/base.html" %}
+
+
+   {% block title %}Start Conversation{% endblock title %}
+
+   {% block content %}
+   <h1>Start Conversation</h1>
+
+   <p>This is the conversation page</p>
+
+   {% endblock content %}
+
+
+----------------------------------------------------
+MODEL - FORM - VIEWS - URLS - TEMPLATES
+
+- 1. MODEL: Inside conversation/models.py
+from django.db import models
+from django.contrib.auth.models import User
+
+from core.models import Product
+
+
+class Conversation(models.Model):
+    item = models.ForeignKey(Product, related_name="conversations", on_delete=models.CASCADE)
+    members = models.ManyToManyField(User, related_name="conversations")
+    created_at = models.DateTimeField(auto_now_add=True)
+    modified_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-modified_at"]
+
+
+class ConversationMessage(models.Model):
+    conversation = models.ForeignKey(Conversation, related_name="messages", on_delete=models.CASCADE)
+    content = models.TextField()
+    created_by = models.ForeignKey(User, related_name="messages", on_delete=models.CASCADE)
+    created_at = models.DateTimeField(auto_now_add=True)
+    modified_at = models.DateTimeField(auto_now=True)
+
+
+
+- 2. FORMS: Inside conversation/forms.py
+    In conversation app, create a file forms.py. Inside forms.py:
+
+    from django import forms
+
+    from .models import ConversationMessage
+
+
+    class ConversationMessageForm(forms.ModelForm):
+        class Meta:
+            model = ConversationMessage
+            fields = ["content"]
+
+            widgets = {
+            "content": forms.Textarea(attrs={
+                "class": "form-control",
+                "placeholder": "Your Message"
+                })
+            }
+
+
+---------------------------
+
+- 3a. VIEWS - CREATING NEW CONVERSATION VIEW: Inside conversation/views.py
+    Create a new conversation:
+
+    from django.shortcuts import render, get_object_or_404, redirect
+
+    from core.models import Product
+
+    from .models import Conversation, ConversationMessage
+    from .forms import ConversationMessageForm
+
+
+    def new_conversation(request, item_pk):
+        item = get_object_or_404(Product, pk=item_pk)
+
+        if item.created_by == request.user:
+            return redirect("core:detail", pk=item_pk)
+
+        conversation = Conversation.objects.filter(item=item).filter(members__in=[request.user.id])
+
+        if conversation:
+            return redirect("conversation:detail", pk=conversation.first().id)
+
+        if request.method == "POST":
+            form = ConversationMessageForm(request.POST)
+
+            if form.is_valid():
+                conversation = Conversation.objects.create(item=item)
+                conversation.members.add(request.user)
+                conversation.members.add(item.created_by)
+                conversation.save()
+
+                conversation_msg = form.save(commit=False)
+                conversation_msg.conversation = conversation
+                conversation_msg.created_by = request.user
+                conversation_msg.save()
+
+                return redirect("core:home")
+
+        else:
+            form = ConversationMessageForm()
+
+        context = {"form": form}
+        return render(request, "conversation/new.html", context)
+
+
+
+
+
+- 4a. URLS: Inside conversation/urls.py
+        path("new/<int:item_pk>/", views.new_conversation, name="new"),
+
+
+
+
+- 5a. TEMPLATES: Inside templates/conversation:
+    Create new.html
+
+    {% extends "core/base.html" %}
+
+    {% block title %}Messages{% endblock title %}
+
+    {% block content %}
+
+    <div class="col-lg-6 mx-auto my-5">
+    <h1>Contact Seller</h1>
+    <form action="" method="POST">
+        {% csrf_token %}
+        <div class="mb-3">
+            {{form.content}}
+        </div>
+        <input type="submit" class="btn btn-lg btn-success mt-3" value="Send">
+    </form>
+    </div>
+
+    {% endblock content %}
+
+
+
+
+THE INBOX ----------------------------
+
+3b. THE INBOX VIEWS - CREATING NEW INBOX VIEW: Inside conversation/views.py
+
+    def inbox(request):
+    conversations = Conversation.objects.filter(members__in=[request.user.id])
+
+    context = {"conversations": conversations}
+    return render(request, "conversation/inbox.html", context)
+
+
+
+
+- 4b. INBOX URLS: Inside conversation/urls.py
+        path("inbox", views.inbox, name="inbox"),
+,
+
+
+
+
+- 5a. INBOX TEMPLATES: Inside templates/conversation:
+    Create inbox.html
+
+    {% extends "core/base.html" %}
+
+    {% block title %}Inbox{% endblock title %}
+
+    {% block content %}
+    <div class="mt-5">
+        <div class="col-lg-6 mx-auto my-5 space-y-6">
+            {% if conversations %}
+                {% for conversation in conversations %}
+                <a href="{% url 'conversation:detail' conversation.id %}" class="text-decoration-none">
+                    <div class="p-3 d-flex bg-dark text-white rounded">
+                        <div class="">
+                            <img style="height:80px; width:80px; border-radius:10%;"
+                                 src="{{ conversation.item.image.url }}" alt="{{ conversation.item.name }}">
+                        </div>
+                        <div class="px-4">
+                            {% for member in conversation.members.all %}
+                                {% if member == conversation.item.created_by %}
+                                    <p class="mb-4"><strong>Vendor: @{{ member.username }}</strong> | {{ conversation.modified_at|timesince }} ago</p>
+                                    <p><strong>Product name: </strong>{{ conversation.item.name }}</p>
+                                {% endif %}
+                            {% endfor %}
+                        </div>
+                    </div>
+                </a>
+                <hr>
+                {% endfor %}
+            {% else %}
+            <p class="bg-secondary text-light text-center rounded p-5" style="font-weight: bold;">You do not have any <span class="text-warning">conversation</span> yet <span class="text-warning">!</span></p>
+            {% endif %}
+        </div>
+    </div>
+    {% endblock content %}
+
+
+
+THE DETAIL ----------------------------
+
+3c. THE DETAIL VIEWS - CREATING NEW DETAIL VIEW: Inside conversation/views.py
+
+    def detail_inbox(request, pk):
+        conversation = Conversation.objects.filter(members__in=[request.user.id]).get(pk=pk)
+
+        if request.method == "POST":
+            form = ConversationMessageForm(request.POST)
+
+            if form.is_valid():
+                conversation_msg = form.save(commit=False)
+                conversation_msg.conversation = conversation
+                conversation_msg.created_by = request.user
+                conversation_msg.save()
+
+                conversation.save()
+
+                return redirect("conversation:detail", pk=pk)
+
+        else:
+            form = ConversationMessageForm()
+
+        context = {
+            "form": form,
+            "conversation": conversation
+        }
+        return render(request, "conversation/detail.html", context)
+
+
+
+
+
+- 4c. DETAIL URLS: Inside conversation/urls.py
+      path("detail/<int:pk>/", views.detail_inbox, name="detail"),
+
+
+
+- 5c. DETAIL TEMPLATES: Inside templates/conversation:
+
+    {% extends "core/base.html" %}
+
+    {% block title %}Inbox{% endblock title %}
+
+    {% block content %}
+
+    <div class="container mt-4">
+        <div class="col-lg-6 mx-auto space-y-6">
+            <div class="bg-dark rounded mx-auto my-5 py-3">
+                <div class="p-3 d-flex ">
+                    <div class="px-3 container-fluid">
+                        {% for message in conversation.messages.all %}
+                            {% if message.created_by == request.user %}
+                              <div class="message-container text-end text-light rounded py-2 px-3 mb-3"
+                                     style="background-color: #1679AB; left:180px;">
+                                    <p class="mb-1"><strong>{{ message.created_by.username }}</strong> | @{{ message.created_at|timesince }}</p>
+                                    <p>{{ message.content }}</p>
+                                </div>
+                            {% else %}
+                              <div class="message-container text-start bg-warning text-light rounded py-2 px-3 mb-3">
+                                    <p class="mb-1"><strong>{{ message.created_by.username }}</strong> | @{{ message.created_at|timesince }}</p>
+                                    <p>{{ message.content }}</p>
+                                </div>
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+
+                </div>
+                <hr>
+                    <div style="text-align:center" class="mb-5">
+                        <form action="" method="POST">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            {{ form.content }}
+                        </div>
+
+                        <button class="btn btn-outline-success">Send</button>
+                        </form>
+                    </div>
+            </div>
+
+
+        </div>
+    </div>
+
+    <style>
+    .message-container {
+        max-width: 70%;
+        position: relative;
+    }
+
+    .message-container:before {
+        content: "";
+        position: absolute;
+        bottom: 0;
+        border-style: solid;
+        border-width: 10px 15px 0;
+        border-color: #fff transparent transparent;
+        z-index: 1;
+    }
+
+    .message-container.text-end:before {
+        right: 0;
+        transform: translateX(100%);
+        border-left-width: 0;
+        border-right-width: 15px;
+    }
+
+    .message-container.text-start:before {
+        left: 0;
+        transform: translateX(-100%);
+        border-right-width: 0;
+        border-left-width: 15px;
+    }
+    </style>
+
+
+    {% endblock content %}
+
+
+THE SEARCH FUNCTIONALITY ----------------------------
+
+PRE STEP: In the base.html:
+    <form class="d-flex mx-auto" role="search" action="{% url 'core:search' %}" method="GET">
+      <input class="form-control me-2" type="search" placeholder="Find items..." aria-label="Search" name="query" value="{{ query }}">
+      <button class="btn btn-outline-success" type="submit">Search</button>
+    </form>
+
+
+
+VIEWS - URLS - TEMPLATES
+
+
+- 1. In the core/views.py, define a function search
+    from django.db.models import Q
+
+    def search(request):
+        query = request.GET.get("query", "")
+
+        products = Product.objects.filter(Q(name__icontains=query) | Q(description__icontains=query))
+
+        context = {
+            "query": query,
+            "products": products
+
+        }
+        return render(request, "core/search.html", context)
+
+
+
+- 2 In the core/urls.py, create a path
+    path("search/", views.search, name="search")
+
+
+
+
+- 3 In the templates/ core, create a search.html
+    {% extends "core/base.html" %}
+
+{% block title %}Search{% endblock title %}
+
+{% block content %}
+
+
+{% if query %}
+    <h1>Find Result for "{{ query }}"</h1>
+{% else %}
+    <h1>Find Items</h1>
+{% endif %}
+
+
+
+    <div class="py-5 bg-body-tertiary">
+        <div class="container">
+
+            <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 g-3">
+                <!-- looping over the item -->
+                {% if products %}
+                    {% for product in products %}
+                    <div class="col">
+                        <div class="card shadow-sm">
+                            <img src="{{ product.image.url }}" alt="" width="100%" height="225">
+                            <div class="card-body">
+                                <p class="card-text"> {{ product.name }} </p>
+                                <p class="card-text">$ {{ product.price }}</p>
+                                <p class="card-text">{{ product.description }}</p>
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div class="btn-group">
+                                        <a href="{% url 'core:detail' product.id %}" type="button"
+                                           class="btn btn-sm btn-outline-secondary">View</a>
+                                        <button type="button" class="btn btn-sm btn-outline-secondary">Buy Now</button>
+                                        <!-- add to cart and take the user to checkout page-->
+                                    </div>
+                                    <small class="text-body-secondary">@ {{ product.created_by.username }} </small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                    <!-- endfor -->
+                {% else %}
+                <p>No product was found</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    {% endblock content %}
+
+
+
+THE BOOTSTRAP TEMPLATE ----------------------------
+- Container:
+    Wraps the content and aligns it. It can be container (fixed-width) or container-fluid (full-width).
+
+- Row:
+    Divides the container into rows. Each row can contain multiple columns.
+
+- Column:
+    Each column can take a width of 1-12, representing the number of columns it spans in a 12-column layout.
+
+

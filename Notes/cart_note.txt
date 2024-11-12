@@ -1,0 +1,384 @@
+Payment Gateway
+
+STE0+
+
+STEPS
+
+Step 1.
+- Create a new app - cart
+- In the settings.py - Add the cart to installed apps
+- Create a urls.py and register it in main urls
+
+
+Step 2. The urls
+- We'll need 4 urls in our cat
+    - cart summary page. One can see what's on their cart
+    - Then 3 more: add, delete, and update
+    Note: We only need urls, we don't need pages for these last 3, we need js and Ajax to call it from the page
+
+    urlpatterns = [
+    path("", views.cart_summary, name="cart_summary"),
+    path("add/", views.cart_add, name="cart_add"),
+    path("delete/", views.cart_delete, name="cart_delete"),
+    path("update/", views.cart_update, name="cart_update"),
+]
+
+Step 3. The views
+- Update the views,
+
+
+
+Step 4. The template
+- In cart/templates, create the cart_summary.html
+
+
+Step 5. The Cart Button
+- In base.html, create the cart button and link it to cart_summary page.
+
+     <li class="nav-link">
+        <a href="{% url 'cart:cart-summary' %}"
+           class="btn btn-lg btn-outline-success">
+          <i class="fa fa-shopping-cart" aria-hidden="true"></i>
+          Cart
+        </a>
+     </li>
+
+
+Step 6. Sessions
+- Session is a way to keep track of what a user has done on a website.
+- Like abandoning cart and return weeks later, we still need to associate the cart with that user.
+- We use an ID that stays in the user's computer as a cookie to achieve that.
+
+    A. In cart, create "cart.py" file
+        - Update accordingly
+
+
+    B. Create a context processor
+        Context processors are templates we insert in django that directs django to look in a
+        certain place to find something, in this case, our cart.
+
+        - In cartApp, create a file "context_processors.py"
+        - Then update the file accordingly
+
+        - Next, Let's inform django that the context_processor exist
+            - In settings.py, inside TEMPLATES [], add:
+            cart.context_processor.cart
+
+        TEMPLATES = [
+        {
+        Other django templates...
+
+                "... other codes",
+                "cart.context_processors.cart",
+                ],
+            },
+        },
+        ]
+
+        - Let's test it out
+            - Inspect page
+            - Application > Storage > Cookies --> Youll see a session key
+                e.g., v5gy1otz29rhe2u2nrzakiv5zd39hlcj
+
+            In terminal,
+                - Initiate python shell: python manage.py shell
+                - from django.contrib.sessions.models import Session
+                - session_k = Session.objects.get(pk='v5gy1otz29rhe2u2nrzakiv5zd39hlcj')
+                - session_k.get_decoded()
+                >>> Out[4]: {'session_key': {}}
+
+                The session_key returns empty because there is nothing in our cart yet
+
+
+Step 7. Adding Product to Cart - V13
+- Search "JQuery CDN" and grab minified version: https://releases.jquery.com/
+- Inside the head section of base.html, paste the code
+- in the DETAIL PAGE, create add-to-cart button
+
+Modify the button as follows:
+- <button type="button" value="{{ product.id }}" class="btn btn-success" id="add-cart">Add to Cart</button>
+- At the bottom of the detail page, just above the {% endblock %}, create a script tag
+
+    <script>
+   // Let's check if the button is pressed
+    $(document).on("click", "#add-cart", function(e){
+    e.preventDefault(); //To ensure that the button is actually clicked
+
+    // Ajax allows us to sent things to the backend without refreshing the page
+    $.ajax({
+        type: "POST",
+        url: "{% url 'cart:cart_add' %}", // This references the add_cart url in our cart/urls.py
+        data: {
+            product_id: $('#add-cart').val(), // Referencing the add-to-cart button above
+            csrfmiddlewaretoken: '{{ csrf_token }}',
+            action: 'post'
+        },
+        // What should happen when we click the button
+        success: function(json){
+            console.log(json)
+        },
+       // What should happen if there is an error
+        error: function(xhr, errmsg, err){
+           // We'll work with this later
+        }
+
+    });
+
+
+    });
+
+    </script>
+
+
+- Next, We'll create a view for this. In cart/views.py:
+    - We need to add to our cart what ever the customer adds to their cart
+    - import the Cart Model
+    - import the json model
+    - import the product model
+    - import from django.http import JsonResponse
+    - get_object_or_404
+
+
+In cart.py, inside the cart-Class:
+    - Create "add" function, and update accordingly
+
+    Now this should not work on our frontend yet,
+    but we can check in our browser
+    - inspect > Network
+    - then click add to cart
+
+
+
+Step 8. Updating the Cart - V14
+- In navbar, the cart button, give it an id="cart_quantity"
+     <span class="badge bg-dark text-white ms-1 rounded-pill" id="cart_quantity">0</span>
+
+- In cart.py, add __len__ function
+    - This enables us to calculate the quantity of items in our cart
+
+    - Now if you inspect the page, click on "Add to cart" and look at the console,you'll see that a product is added each time
+
+- In cart/views.py, inside the cart_add view:
+    -  # Update: Get cart quantity
+        cart_quantity = cart.__len__()
+
+        # Return Response
+        # response = JsonResponse({'Product Name: ': product.name})
+
+        response = JsonResponse({'qty': cart_quantity})
+        return response
+
+    - If you check the dev console, you'll see qty and the item count that
+      increases by 1 when item is added to it. We are receiving this message
+      on the console because we, in detail.html,
+        success: function(json){
+                console.log(json)
+            },
+
+
+        Updated:
+
+    <script>
+        $(document).on("click", "#add-cart", function(e){
+            e.preventDefault();
+            $.ajax({
+                type: "POST",
+                url: '{% url 'cart:cart_add' %}',
+                data: {
+                product_id: $('#add-cart').val(),
+                    csrfmiddlewaretoken: '{{ csrf_token }}',
+                    action: 'post'
+                },
+
+                success: function(json){
+                    <!-- // console.log(json)-->
+                    document.getElementById("cart_quantity") <!--// from cart/views.py-->
+                        textContent = json.qty  <!-- // from our cart console logged after success above -->
+                },
+
+                error: function(xhr, errmsg, err){
+                    console.log(xhr.status + ": " + xhr.responseText); // Log the error message to the console
+                    alert("Error occurred while processing your request. Please try again later."); // Display an error message to the user
+                }
+            });
+        });
+
+    </script>
+
+
+      The above is telling json to log the success message on the console.
+
+    - In details.html, update the JQuery, as follows:
+        document.getElementById("cart_quantity") // from cart/views.py
+            textContent = json.qty  // from our cart console logged after success above
+
+    - in base.html,
+        Change this: <span class="badge bg-dark text-white ms-1 rounded-pill" id="cart_quantity">0</span>
+        To this:     <span class="badge bg-dark text-white ms-1 rounded-pill" id="cart_quantity">{{ cart|length }}</span>
+
+    
+
+Step 9. Updating the Cart detail page - V15
+We want to be able to click on the navbar and go straight to the detail page
+- In cart.py inside the Cart class: Create a function that allows us to see whats in the cart
+    Under the def __len__(self)
+    
+    This will allow us to look up what's in the cart.
+    - from products.models import Product
+    - def get_products(self):
+        # Get ids from all elements the cart
+        product_ids = self.cart.keys()
+        # Use ids to lookup products in database model
+        products = Product.objects.filter(id__in=product_ids)
+        # Return all products in our cat
+        return products
+
+
+
+- In cart/views.py, update "def cart_summary" as follows:
+    - def cart_summary(request):
+        cart = Cart(request)
+        cart_products = cart.get_products
+
+        context = {
+            "cart_products": cart_products
+            }
+        return render(request, "cart/cart_summary.html", context)
+
+
+- Next, update the cart_summary.html template
+    -   </header>
+        <br/>
+        <div class="container">
+            {{ cart_products }}  # This will give you a queryset of all products in the cart.
+            
+            # Iterate over the cart objects
+            {% for product in cart_products %} 
+            {{ products }}
+            {% endfor %}
+        </div>
+
+    -   UPDATE copy from product-detail page, to form a list of all products
+        - Remove the add-to-cart button
+
+    -   UPDATE: Let's use IF STATEMENTS to handle what happens when there is nothing in the cart
+    -  </header>
+            <br/>
+            <div class="container">
+                # Iterate over the cart objects
+                {% if cart_products %}
+                    {% for product in cart_products %} 
+                        {{ products }}
+                    {% endfor %}
+                {% else %}
+                    <p>There is nothing in your cart</p>
+                {% endif %}
+            </div>
+
+
+Step 10. Product Quantities - V16
+- Let's add form to update the quantity of itmes someone wants to buy.
+- If customer wants 2 or more items, there's no way to get that.
+
+- In bootstrap, forms > select
+- In our product-detail page, above the contact Seller button, paste the bootstrap form
+- Edit the form as follows:
+     <div class="row justify-content-start">
+        <div class="col-md-8">Select Quantity:</div>
+        <div class="col-md-8">
+            <select class="form-select id="qty-cart">
+            <option value="1">1</option>
+            <option value="2">2</option>
+            <option value="3">3</option>
+            <option value="4">4</option>
+            <option value="5">5</option>
+            </select>
+        </div>
+    </div>
+
+- Add id="qty-cart" after the form-select class as above:
+    <select class="form-select id="qty-cart">
+
+- At the bottom of same detail page, update the Ajax and add product_qty;
+    data: { # Reference
+        # ref: product_id: $('#add-cart').val(),
+        product_qty: $("#qty-cart option:selected").text(),
+
+- In cart/views.py, inside "def cart_add" function, under product_id,
+   - product_qty = int(request.POST.get('product_qty'))
+   - inside cart.add(product=product), add the following
+     cart.add(product=product, quantity=product_qty)
+
+- Next, in cart.py, Cart class:
+    - def add(self, product, quantity):
+        ref: product_id = str(product.id)
+        product_qty = str(quantity)
+
+    - Inside else statement in 
+    else:
+        Ref: # self.cart[product_id] = {"price": str(product.price)}
+        self.cart[product_id] = int(product_qty)
+
+Then:
+    - Copy the session id 
+    - Open the python shell, python manage.py shell
+    - Then, run the following command:
+
+       - from django.contrib.sessions.models import Session
+       - session_key = Session.objects.get(pk="v7078cpkfn0w1r8lqp859dt73jfzcddi")
+       - session_key.get_decoded()
+
+       >>> {'session_key': {'2': 3, '9': 1}}
+
+
+Next, Lets make our page to automatically show the quantity of items selected
+    - copy the quantity form in our detail page
+    - In cart_summary.html, paste the code from the quantity form
+        <div class="row justify-content-start">
+            <div class="col-md-8">Select Quantity:</div>
+            <div class="col-md-8">
+            <select class="form-select id="qty-cart">
+                <option value="1">1</option>
+                <option value="2">2</option>
+                <option value="3">3</option>
+                <option value="4">4</option>
+                <option value="5">5</option>
+            </select>
+            </div>
+        </div>
+    - in views.py, inside "def cart_summary, create a variable "quantity" as follows: 
+            def cart_summary(request):
+                cart = Cart(request)
+                cart_products = cart.get_products
+                quantities = cart.get_quantities  # Not defined yet in cart.py class Cart Page.
+
+                context = {
+                    "cart_products": cart_products,
+                    "quantities": quantities,
+                }
+                return render(request, "cart/cart_summary.html", context)
+        
+        - Still in the cart_summary.html, 
+            # Ref: <select class="form-select" id="qty-cart">
+                
+                
+                    {% comment %} Remember we have a dictionary - {'4': 3, '2': 5}  {% endcomment %}
+                    {% for key, value in quantities.items %}
+                        {% if key == product.id|slugify %} {% comment %} Here the slugify filter turns the string to integer {% endcomment %}
+                            <option selected>{{ value }}</option>
+                        {% endif %}                
+                    {% endfor %}
+                
+                
+                # Ref: <option value="1">1</option>
+    
+Step 11. Update Shopping Cart - V17
+- Let's 
+
+
+
+
+
+
+
+

@@ -1,0 +1,87 @@
+Step 1: Create Environment variable - .env
+
+1a. In the base of your you application, create .env file
+    touch .env
+
+    - SECRET_KEY = 3456789098765465tftrtdyfuiopiouiyuytdrsrdtfyguh
+    - DEBUG = True
+    - DATABASE_URL = <The Externak urls>
+
+1b. In terminal: pip install python-dotenv
+    In settings.py:
+    - import os
+    - from dotenv import load_dotenv
+    - load_dotenv()
+
+    - SECRET_KEY = os.getenv("SECRET_KEY")
+    - DEBUG = os.getenv("DEBUG", False)
+    - DATABASE_URL = dj_database_url.parse(os.getenv("DATABASE_URL")
+
+    https://pypi.org/project/python-dotenv/
+
+
+
+
+2. Commit the project to GitHub
+    - create a gitignore file
+    git init
+    git add .
+    git commit -m "initial commit"
+    git remote add origin https://....
+    git push -u origin master
+
+
+3. Render
+    - create an account in render.com
+    - click on "New" > postgreSQL, and name it
+        e.g., buyright-django-db
+
+    - click on "connect", and copy the external database url
+
+
+4. In .env file, paste the render external url
+    e.g., DATABASE_URL=postgresql://buyright_django...
+
+
+5. In settings.py;
+    - pip install dj-database-url
+    - import dj_database_url
+
+    Under the db.sqlite3,
+    - DATABASES["default"] = dj_database_url.parse(os.getenv("DATABASE_URL"))
+
+    - pip install psycopg2-binary  # database driver
+    - python manage.py makemigrations
+    - python manage.py migrate
+        https://pypi.org/project/psycopg2-binary/
+
+
+6. GUNICORN
+    - pip install gunicorn  #https://pypi.org/project/gunicorn/
+    - at the root of your application, crate a Procfile
+    - Inside the Procfile, add the following code
+        web: gunicorn <name_of_your_project(where there is settings.py)>.wsgi
+
+
+7. Create or update requirements.txt
+    pip freeze > requirements.txt
+
+
+8. Commit to github
+
+9. In render, create a web service
+    - Add Environment Variables
+    # Update the fields:
+        ALLOWED_HOSTS : "awsl-ttze.onrender.com"
+        DATABASE_URL : Internal Database URL
+        DEBUG : False
+        SECRET_KEY : Generate it
+
+
+    # COMMIT THE REPO In GITHUB
+    - git init
+    - git add .
+    - git commit -m "the message"
+    - git push
+
+
