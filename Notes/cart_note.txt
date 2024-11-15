@@ -11,7 +11,7 @@ Step 1.
 
 
 Step 2. The urls
-- We'll need 4 urls in our cat
+- We'll need 4 urls in our cart/urls.py
     - cart summary page. One can see what's on their cart
     - Then 3 more: add, delete, and update
     Note: We only need urls, we don't need pages for these last 3, we need js and Ajax to call it from the page
@@ -60,9 +60,9 @@ Step 6. Sessions
         - In cartApp, create a file "context_processors.py"
         - Then update the file accordingly
 
-        - Next, Let's inform django that the context_processor exist
+        - Next, Let's inform django that the context_processors exist
             - In settings.py, inside TEMPLATES [], add:
-            cart.context_processor.cart
+            cart.context_processors.cart
 
         TEMPLATES = [
         {
